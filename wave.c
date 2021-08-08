@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
 /*
  * Set additional CLI arguments for shaping the wavetable being created.
@@ -51,7 +53,15 @@ int main (int argc, char** argv) {
 
 	if (argc != 3) {
 		printf("Not correct use of WaveTable Generator! Do better.\n ()");
+		printf("(./wave <name-of-output-file> <sample-size>)");
 		return 1;
+	} else {
+		for (int i = 0, n = strlen(argv[2]); i < n; i++) {
+			if (!isdigit(argv[2][i])) {
+				printf("<sample-size> must be a number, preferably a pow^2");
+				return 2;
+			}
+		}
 	}
 	
 	int sampleSize = atoi(argv[2]);
