@@ -46,19 +46,26 @@ struct WAVEHEADER {
 
 
 
-
 int main (int argc, char** argv) {
 
-	int sampleSize = atoi(argv[1]);
 
-	if (argc != 2) {
+	if (argc != 3) {
 		printf("Not correct use of WaveTable Generator! Do better.\n ()");
 		return 1;
 	}
+	
+	int sampleSize = atoi(argv[2]);
 
 	struct WAVEHEADER* wh = malloc(sizeof(struct WAVEHEADER));
+	
+	char path[100];
+	sprintf(path, "/Users/viktorsandstrom/Documents/C/projects/wavetable/%s.wav", argv[1]);
+	
+	FILE* wave = fopen(path, "w");
 
 
+	// POPULATE MEMBER VARIABLES OF STRUCT:
+	
 	// wh -> subChunk2ID = 0x64617461; endianess from documentation
 	wh -> subChunk2ID = 0x61746164; // reverse endian
 	wh -> subChunk2Size = ( sampleSize * 2)  * NUMCHAN * ( BITDEPTH / 8 );
@@ -78,12 +85,11 @@ int main (int argc, char** argv) {
 	wh -> byteRate = SAMPLERATE * NUMCHAN * ( BITDEPTH / 8 ); // samplerate * numchannels * ( bits per sampler / 8 ) 
 	wh -> bps = BITDEPTH;
 
-	
-	FILE* wave = fopen("/Users/viktorsandstrom/Documents/C/projects/wavetable/wave.wav", "w");
-
+	// Write header to file
 	fwrite(wh, sizeof(struct WAVEHEADER), 1, wave);
 
 	float* sampleVal = malloc(sizeof(SAMPLE));
+	float sixteenBit = MAX;
 
 	int flag = 0;
 	int count = 0;
@@ -98,14 +104,14 @@ int main (int argc, char** argv) {
 			count++;
 		} else if ( flag == 1 ){
 
-			*sampleVal = ( MAX / sampleSize ) * i + 1;
+			*sampleVal = ( ( sixteenBit / 2) / ( sampleSize * 2) ) * i + 1;
 			flag = 0;
 
 			count++;
 		}
 
 
-		fwrite(sampleVal, sizeof(SAMPLE), sampleSize, wave);
+		fwrite(sampleVal, sizeof(SAMPLE), 1, wave);
 	
 	}
 
