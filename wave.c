@@ -5,7 +5,7 @@
  * Set additional CLI arguments for shaping the wavetable being created.
  * Additional function of translating a .wav into SuperCollider WaveTable-format?
  *
- * TODO: Change algorithm to take in account that audio is a signed number, i.e. -1 .. 1.
+ * TODO: Change algorithm to take in account that audio is a signed number, i.e. -1 .. 1..
  */
 
 // =====================================================================
@@ -58,23 +58,25 @@ int main (int argc, char** argv) {
 
 	struct WAVEHEADER* wh = malloc(sizeof(struct WAVEHEADER));
 
-	wh -> chunkID = 0x52494646;
-	wh -> chunkSize = 36 + ( sampleSize * 2 );
-	wh -> format = 0x57415645;
 
-	wh -> subChunk1ID = 0x666d7420;
+	// wh -> subChunk2ID = 0x64617461; endianess from documentation
+	wh -> subChunk2ID = 0x61746164; // reverse endian
+	wh -> subChunk2Size = ( sampleSize * 2)  * NUMCHAN * ( BITDEPTH / 8 );
+	
+	// wh -> chunkID = 0x52494646;
+	wh -> chunkID = 0x46464952;
+	wh -> chunkSize = 36 + wh -> subChunk2Size;
+	// wh -> format = 0x57415645;
+	wh -> format = 0x45564157;
+
+	// wh -> subChunk1ID = 0x666d7420;
+	wh -> subChunk1ID = 0x20746d66;
 	wh -> subChunk1Size = 16;
 	wh -> audioFormat = 1;
 	wh -> numChan = NUMCHAN;
 	wh -> smplRate = SAMPLERATE;
 	wh -> byteRate = SAMPLERATE * NUMCHAN * ( BITDEPTH / 8 ); // samplerate * numchannels * ( bits per sampler / 8 ) 
 	wh -> bps = BITDEPTH;
-
-	wh -> subChunk2ID = 0x64617461;
-	wh -> subChunk2Size = ( sampleSize * 2)  * NUMCHAN * ( BITDEPTH / 8 );
-
-
-
 
 	
 	FILE* wave = fopen("/Users/viktorsandstrom/Documents/C/projects/wavetable/wave.wav", "w");
@@ -84,6 +86,7 @@ int main (int argc, char** argv) {
 	float* sampleVal = malloc(sizeof(SAMPLE));
 
 	int flag = 0;
+	int count = 0;
 
 	for ( int i = 0; i < ( sampleSize * 2 ); ++i ) {
 			
@@ -91,10 +94,14 @@ int main (int argc, char** argv) {
 
 			*sampleVal = 0;
 			flag = 1;
+
+			count++;
 		} else if ( flag == 1 ){
 
 			*sampleVal = ( MAX / sampleSize ) * i + 1;
 			flag = 0;
+
+			count++;
 		}
 
 
@@ -105,6 +112,13 @@ int main (int argc, char** argv) {
 	fclose(wave);
 
 	free(sampleVal);
+
+	int headSize = sizeof(struct WAVEHEADER);
+
+	printf("Size of header: %i  \nSize of samples: %i  -- which size is: %i\n", headSize, count, count*16);
+	printf("Total size of file: %i\n", 8 + wh -> chunkSize);
+
+	free(wh);
 
 	return 0;
 
