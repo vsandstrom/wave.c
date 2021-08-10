@@ -50,7 +50,7 @@ struct WAVEHEADER {
 
 } __attribute__((packed)) ;
 
-void shapeSwitch( char shape[], SAMPLE* pointer, int numSamples, FILE* file);
+void shapeSwitch( char symbol, int numSamples, FILE* file);
 
 int main (int argc, char** argv) {
 
@@ -117,12 +117,23 @@ int main (int argc, char** argv) {
 	int count = 0;
 
 	if (argc == 4) {  // 4 shapes: sine, triangle, sawtooth or softsquare
-		//if(!strcmp(argv[3], "sine") || !strcmp(argv[3], "triangle") || !strcmp(argv[3], "saw") || !strcmp(argv[3], "ssquare")) {
+			// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
+		char symbol = 0;
 
-		shapeSwitch(argv[3], sampleVal, numSamples, wave);
+		if (!strcmp(argv[3], "sine")) {
+			symbol = 's';
+		} else if (!strcmp(argv[3], "triangle")) {
+			symbol = '^';
+		} else if (!strcmp(argv[3], "saw") || (!strcmp(argv[3], "sawtooth"))) {
+			symbol = 'z';
+		} else if (!strcmp(argv[3], "square") || (!strcmp(argv[3], "softsquare"))){
+			symbol = 'n';
+		} else {
+			exit(0);
+		}
+
+		shapeSwitch(symbol, numSamples, wave);
 			
-
-		//}
 	} else {
 	
 		int flag = 0;
@@ -168,83 +179,83 @@ int main (int argc, char** argv) {
 
 }
 
-void shapeSwitch( char shape[], SAMPLE* pointer, int numSamples, FILE* file) {
 
-	char symbol = 0;
+void shapeSwitch( char symbol, int numSamples, FILE* file) {
+
 	int count = 0;
 		
-		// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
-	if (!strcmp(shape, "sine")) {
-		symbol = 's';
-	} else if (!strcmp(shape, "triangle")) {
-		symbol = '^';
-	} else if (!strcmp(shape, "saw") || (!strcmp(shape, "sawtooth"))) {
-		symbol = 'z';
-	} else if (!strcmp(shape, "square") || (!strcmp(shape, "softsquare"))){
-		symbol = 'n';
-	} else {
-		exit(0);
-	}
+	switch (symbol) { // Still not working tho:
+		case 's':					// SINE wavetable stolen from JUCE tutorial.
+			printf("sine\n");
 
+			double currentAngle = 0.0f, angleDelta = 0.0f;
+			SAMPLE currentValue = 0;
 
+			angleDelta = M_2_PI / ( numSamples - 1);
 
-	switch (symbol) { // REMOVE return-statements later on!
-		case 's':
-			printf("sine");
-			float degPerSample = 360.0 / ( numSamples * 2 );
 			int sineflag = 0;
-
 
 			for (int i = 0; i < numSamples * 2; ++i) { // use sin() to get slices from a sine. sin( ( 360/numSamples ) * iteratorVariable ) * SAMPLE
 				// ONLY EXPORTS NOISE! NOT WORKING... 
 				
 				if (sineflag) {
 
-					*pointer = 0;
+					currentValue = 0;
 					sineflag = 0;
 
 					count++;
 				} else {
-					*pointer = round( sin( degPerSample * i ) );
+					currentValue = sin(currentAngle);
+					
+					currentAngle += angleDelta;
+					/* if (currentAngle >= M_2_PI){ */
+					/* 	 currentAngle -= M_2_PI; */
+					/* } */
 					sineflag = 1; 
 
-					printf("%f\n", round( sin(degPerSample * i) ) );
-					printf( "degPerSample * numSamples = %f", degPerSample * ( numSamples / 2 ) );
+					/* printf("%f\n", currentAngle); */
+					/* printf( "degPerSample * numSamples = %f", currentAngle ); */
 
 					count++;
 				}
 
-				fwrite(pointer, sizeof(SAMPLE), 1, file);
+				
+				fwrite(&currentValue, sizeof(SAMPLE), 1, file);
+				printf("%i", currentValue);
 			}
+
 			break;
 		case '^':
-			printf("triangle");
+			printf("triangle\n");
 
 			break;
 		case 'z':
-			printf("sawtooth");
+			printf("sawtooth\n");
 			int sawflag = 0;
+			
+			SAMPLE sawCurrentValue = 0;
 			
 
 			for ( int i = 0; i < ( numSamples * 2 ); ++i ) {
 					
-				if ( sawflag == 0 ) {
+				if (!sawflag) {
 
-					*pointer = 0;
+					sawCurrentValue = 0;
+
 					sawflag = 1;
 
 					count++;
-				} else if ( sawflag == 1 ){ // Write bipolar saw from maximum positive range to maximum negative range.
+				} else if (sawflag){ // Write bipolar saw from maximum positive range to maximum negative range.
 
-					*pointer = round( MAX - ( ( MAX * 2 ) / ( numSamples * 2) ) * i + 1 );
+					sawCurrentValue = round( MAX - ( ( MAX * 2 ) / ( numSamples * 2) ) * i + 1 );
 					sawflag = 0;
 
 					count++;
 				}
 
-				printf("%i\n", *pointer);
+				printf("%i\n", sawCurrentValue);
 
-				fwrite(pointer, sizeof(SAMPLE), 1, file);
+				fwrite(&sawCurrentValue, sizeof(SAMPLE), 1, file);
 			}
 			break;
 		case 'n':
