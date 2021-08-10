@@ -117,12 +117,12 @@ int main (int argc, char** argv) {
 	int count = 0;
 
 	if (argc == 4) {  // 4 shapes: sine, triangle, sawtooth or softsquare
-		if(!strcmp(argv[3], "sine") || !strcmp(argv[3], "triangle") || !strcmp(argv[3], "saw") || !strcmp(argv[3], "ssquare")) {
+		//if(!strcmp(argv[3], "sine") || !strcmp(argv[3], "triangle") || !strcmp(argv[3], "saw") || !strcmp(argv[3], "ssquare")) {
 
-			shapeSwitch(argv[3], sampleVal, numSamples, wave);
+		shapeSwitch(argv[3], sampleVal, numSamples, wave);
 			
 
-		}
+		//}
 	} else {
 	
 		int flag = 0;
@@ -135,13 +135,14 @@ int main (int argc, char** argv) {
 				flag = 1;
 
 				count++;
-			} else if ( flag == 1 ){
+			} else if ( flag == 1 ){ // Write bipolar saw from maximum positive range to maximum negative range.
 
-				*sampleVal = round( ( ( sixteenBit ) / ( numSamples * 2) ) * i + 1 );
+				*sampleVal = round( sixteenBit - ( ( sixteenBit * 2 ) / ( numSamples * 2) ) * i + 1 );
 				flag = 0;
 
 				count++;
 			}
+
 
 			printf("%i\n", *sampleVal);
 
@@ -170,16 +171,19 @@ int main (int argc, char** argv) {
 void shapeSwitch( char shape[], SAMPLE* pointer, int numSamples, FILE* file) {
 
 	char symbol = 0;
+	int count = 0;
 		
 		// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
 	if (!strcmp(shape, "sine")) {
 		symbol = 's';
 	} else if (!strcmp(shape, "triangle")) {
 		symbol = '^';
-	} else if (!strcmp(shape, "saw")) {
+	} else if (!strcmp(shape, "saw") || (!strcmp(shape, "sawtooth"))) {
 		symbol = 'z';
-	} else {
+	} else if (!strcmp(shape, "square") || (!strcmp(shape, "softsquare"))){
 		symbol = 'n';
+	} else {
+		exit(0);
 	}
 
 
@@ -188,30 +192,30 @@ void shapeSwitch( char shape[], SAMPLE* pointer, int numSamples, FILE* file) {
 		case 's':
 			printf("sine");
 			float degPerSample = 360.0 / ( numSamples * 2 );
-			int flag = 0;
+			int sineflag = 0;
 
 
 			for (int i = 0; i < numSamples * 2; ++i) { // use sin() to get slices from a sine. sin( ( 360/numSamples ) * iteratorVariable ) * SAMPLE
 				// ONLY EXPORTS NOISE! NOT WORKING... 
 				
-				if (flag) {
+				if (sineflag) {
 
 					*pointer = 0;
-					flag = 0;
+					sineflag = 0;
 
+					count++;
 				} else {
-					printf( "degPerSample * numSamples = %f", degPerSample * ( numSamples / 2 ) );
 					*pointer = round( sin( degPerSample * i ) );
+					sineflag = 1; 
+
 					printf("%f\n", round( sin(degPerSample * i) ) );
+					printf( "degPerSample * numSamples = %f", degPerSample * ( numSamples / 2 ) );
 
-
-					flag = 1; 
+					count++;
 				}
-
 
 				fwrite(pointer, sizeof(SAMPLE), 1, file);
 			}
-
 			break;
 		case '^':
 			printf("triangle");
@@ -219,7 +223,29 @@ void shapeSwitch( char shape[], SAMPLE* pointer, int numSamples, FILE* file) {
 			break;
 		case 'z':
 			printf("sawtooth");
+			int sawflag = 0;
 			
+
+			for ( int i = 0; i < ( numSamples * 2 ); ++i ) {
+					
+				if ( sawflag == 0 ) {
+
+					*pointer = 0;
+					sawflag = 1;
+
+					count++;
+				} else if ( sawflag == 1 ){ // Write bipolar saw from maximum positive range to maximum negative range.
+
+					*pointer = round( MAX - ( ( MAX * 2 ) / ( numSamples * 2) ) * i + 1 );
+					sawflag = 0;
+
+					count++;
+				}
+
+				printf("%i\n", *pointer);
+
+				fwrite(pointer, sizeof(SAMPLE), 1, file);
+			}
 			break;
 		case 'n':
 			printf("softsquare");
