@@ -78,8 +78,8 @@ int main (int argc, char** argv) {
 	
 	int numSamples = atoi(argv[2]);
 	
-	char path[100];
-	sprintf(path, "/Users/viktorsandstrom/Documents/C/projects/wavetable/%s.wav", argv[1]);
+	char path[40];
+	sprintf(path, "./%s.wav", argv[1]);
 	
 	FILE* wave = fopen(path, "w");
 	if (wh == NULL) {
