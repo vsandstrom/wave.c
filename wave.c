@@ -12,6 +12,8 @@
  *
  * TODO: continue switch-statement for different shapes. implement algorithms 
  *
+ * TODO: Set bitDepth, sampleRate and numSamples by reading header of input file.
+ *
  */
 
 // =====================================================================
@@ -239,51 +241,51 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			float increment = ( MAX16 - 1 ) / ( numSamples / 4 ); // Calculate increment per sample in tri
 			float tempCur = 0;
 
-			for (int i = 0; i < 4; ++i) { // 4 segments: up | down | neg-down | neg-up
+			// 4 segments: up | down | neg-down | neg-up
 
-				for (int j = 0; j < ( numSamples / 2 ); ++j) { // up
+			for (int i = 0; i < ( numSamples / 2 ); ++i) { // up
 
-					if (!triflag) {
-						triCurVal = 0;
-						triflag = 1;
+				if (!triflag) {
+					triCurVal = 0;
+					triflag = 1;
 
-					} else if (triflag) {
-						tempCur += increment;
-						triCurVal = tempCur;
-						triflag = 0;
-					}
-
-					fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
+				} else if (triflag) {
+					tempCur += increment;
+					triCurVal = tempCur;
+					triflag = 0;
 				}
+
+				fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
+			}
+			
+			for (int j = 0; j < ( numSamples ); ++j) { // neg-down
+
+				if (!triflag) {
+					triCurVal = 0;
+					triflag = 1;
+
+				} else if (triflag) {
+					tempCur -= increment;
+					triCurVal = tempCur;
+					triflag = 0;
+				}
+				fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
+			}
+
+			for (int k = 0; k < ( numSamples / 2 ); ++k) { // neg-up
+
+				if (!triflag) {
+					triCurVal = 0;
+					triflag = 1;
+
+				} else if (triflag) {
+					tempCur += increment;
+					triCurVal = tempCur;
+					triflag = 0;
+				}
+
+				fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
 				
-				for (int k = 0; k < ( numSamples ); ++k) { // neg-down
-
-					if (!triflag) {
-						triCurVal = 0;
-						triflag = 1;
-
-					} else if (triflag) {
-						tempCur -= increment;
-						triCurVal = tempCur;
-						triflag = 0;
-					}
-					fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
-				}
-
-				for (int l = 0; l < ( numSamples / 2 ); ++l) { // neg-up
-
-					if (!triflag) {
-						triCurVal = 0;
-						triflag = 1;
-
-					} else if (triflag) {
-						tempCur += increment;
-						triCurVal = tempCur;
-						triflag = 0;
-					}
-
-					fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
-				}
 			}
 
 			break;
@@ -318,6 +320,88 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			break;
 		case 'n':
 			printf("softsquare");
+			
+			int sqrflag = 0;
+			SAMPLE sqrCurVal = 0;
+			const SAMPLE MAXSQR = MAX16 - 1;
+			float decrement = 0;
+
+			for (int i = 0; i < ( numSamples / 5 ); ++i) { // ramp up
+				if (!sqrflag){
+					sqrCurVal = 0;
+					sqrflag = 1;
+
+				} else if (sqrflag) {
+					decrement = MAXSQR / ( i + 1 );
+					sqrCurVal = MAXSQR - decrement;
+					sqrflag = 0;
+
+				}
+			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
+			}
+
+			for (int j = 0; j < ( ( numSamples / 5 ) * 3 ); ++j) { // pos up
+				if (!sqrflag){
+					sqrCurVal = 0;
+					sqrflag = 1;
+
+				} else if (sqrflag) {
+					sqrCurVal = MAXSQR;
+					sqrflag = 0;
+
+				}
+			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
+			}
+
+			for (int k = 0; k < ( numSamples / 5 ); ++k) { // ramp down
+				if (!sqrflag){
+					sqrCurVal = 0;
+					sqrflag = 1;
+
+				} else if (sqrflag) {
+					decrement = MAXSQR / ( ( numSamples / 10 ) - ( k + 1 ) );
+					sqrCurVal = MAXSQR - decrement;
+					sqrflag = 0;
+				}
+			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
+			}
+			
+			for (int l = 0; l < ( numSamples / 5 ); ++l) { // neg ramp down
+				if (!sqrflag){
+					sqrCurVal = 0;
+					sqrflag = 1;
+
+				} else if (sqrflag) {
+					decrement = MAXSQR / ( l + 1 );
+					sqrCurVal =  -1 * ( MAXSQR - decrement );
+					sqrflag = 0;
+				}
+			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
+			}
+
+			for (int m = 0; m < ( ( numSamples / 5 ) * 3 ); ++m) { // neg down
+				if (!sqrflag){
+					sqrCurVal = 0;
+					sqrflag = 1;
+
+				} else if (sqrflag) {
+					sqrCurVal = ( -1 * MAXSQR );
+					sqrflag = 0;
+				}
+			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
+			}
+			
+			for (int n = 0; n < ( numSamples / 5 ); ++n) { // ramp up
+				if (!sqrflag){
+					sqrCurVal = 0;
+					sqrflag = 1;
+				} else if (sqrflag) {
+					decrement = MAXSQR / ( ( numSamples / 10 ) - ( n + 1 ) );
+					sqrCurVal = ( -1 * MAXSQR ) - decrement;
+					sqrflag = 0;
+				}
+			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
+			}
 
 			break;
 		default:
