@@ -21,12 +21,16 @@
 //
 // =====================================================================
 
-#define MAX 32767 
+#define MAX16 32767 
+#define MAX24 8388607
 #define SAMPLERATE 44100
 #define BITDEPTH 16
 #define NUMCHAN 1
 
 typedef int16_t SAMPLE; // 24 bit version might be made in the future
+typedef int32_t SAMPLE24; // Try using sizeof(char * 3) for reading writing
+
+
 typedef unsigned int int4_t; // redefine regular integer with bytesize in name
 typedef short int2_t; // same as above, but 2 byte
 
@@ -52,11 +56,12 @@ struct WAVEHEADER {
 
 void shapeSwitch( char symbol, int numSamples, FILE* file);
 
+
 int main (int argc, char** argv) {
 
 
 	if (argc < 3 || argc > 4 ) {
-		printf("Not correct use of WaveTable Generator! Do better.\n ()");
+		printf("Not correct use of WaveTable Generator! Do better.\n");
 		printf("(./wave <name-of-output-file> <sample-size> (opt: <wave-shape>))");
 		return 1;
 	} else {
@@ -109,7 +114,7 @@ int main (int argc, char** argv) {
 	wh -> byteRate = SAMPLERATE * NUMCHAN * ( BITDEPTH / 8 ); // samplerate * numchannels * ( bits per sampler / 8 ) 
 	wh -> bps = BITDEPTH;
 	
-	int sixteenBit = MAX;
+	int sixteenBit = MAX16;
 
 	// Write header to file
 	fwrite(wh, sizeof(struct WAVEHEADER), 1, wave);
@@ -186,6 +191,7 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 		
 	switch (symbol) { // Still not working tho:
 		case 's':					// SINE wavetable stolen from JUCE tutorial.
+
 			printf("sine\n");
 
 			double currentAngle = 0.0f, angleDelta = 0.0f;
@@ -228,34 +234,86 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 		case '^':
 			printf("triangle\n");
 
+			int triflag = 1;
+			SAMPLE triCurVal = 0;
+			float increment = ( MAX16 - 1 ) / ( numSamples / 4 ); // Calculate increment per sample in tri
+			float tempCur = 0;
+
+			for (int i = 0; i < 4; ++i) { // 4 segments: up | down | neg-down | neg-up
+
+				for (int j = 0; j < ( numSamples / 2 ); ++j) { // up
+
+					if (!triflag) {
+						triCurVal = 0;
+						triflag = 1;
+
+					} else if (triflag) {
+						tempCur += increment;
+						triCurVal = tempCur;
+						triflag = 0;
+					}
+
+					fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
+				}
+				
+				for (int k = 0; k < ( numSamples ); ++k) { // neg-down
+
+					if (!triflag) {
+						triCurVal = 0;
+						triflag = 1;
+
+					} else if (triflag) {
+						tempCur -= increment;
+						triCurVal = tempCur;
+						triflag = 0;
+					}
+					fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
+				}
+
+				for (int l = 0; l < ( numSamples / 2 ); ++l) { // neg-up
+
+					if (!triflag) {
+						triCurVal = 0;
+						triflag = 1;
+
+					} else if (triflag) {
+						tempCur += increment;
+						triCurVal = tempCur;
+						triflag = 0;
+					}
+
+					fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
+				}
+			}
+
 			break;
 		case 'z':
 			printf("sawtooth\n");
-			int sawflag = 0;
+			int sawflag = 1;
 			
-			SAMPLE sawCurrentValue = 0;
+			SAMPLE sawCurVal = 0;
 			
 
 			for ( int i = 0; i < ( numSamples * 2 ); ++i ) {
 					
 				if (!sawflag) {
 
-					sawCurrentValue = 0;
+					sawCurVal = 0;
 
 					sawflag = 1;
 
 					count++;
 				} else if (sawflag){ // Write bipolar saw from maximum positive range to maximum negative range.
 
-					sawCurrentValue = round( MAX - ( ( MAX * 2 ) / ( numSamples * 2) ) * i + 1 );
+			 		sawCurVal = round( MAX16 - ( ( MAX16 * 2 ) / ( numSamples * 2) ) * i + 1 );
 					sawflag = 0;
 
 					count++;
 				}
 
-				printf("%i\n", sawCurrentValue);
+				printf("%i\n", sawCurVal);
 
-				fwrite(&sawCurrentValue, sizeof(SAMPLE), 1, file);
+				fwrite(&sawCurVal, sizeof(SAMPLE), 1, file);
 			}
 			break;
 		case 'n':
