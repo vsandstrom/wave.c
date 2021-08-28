@@ -325,8 +325,9 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			SAMPLE sqrCurVal = 0;
 			const SAMPLE MAXSQR = MAX16 - 1;
 			float decrement = 0;
+			float samples = numSamples * 2;
 
-			for (int i = 0; i < ( numSamples / 5 ); ++i) { // ramp up
+			for (int i = 0; i < ( samples / 10 ); ++i) { // ramp up
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -340,7 +341,7 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 
-			for (int j = 0; j < ( ( numSamples / 5 ) * 3 ); ++j) { // pos up
+			for (int j = 0; j < ( ( samples / 10 ) * 3 ); ++j) { // pos up
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -353,20 +354,20 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 
-			for (int k = 0; k < ( numSamples / 5 ); ++k) { // ramp down
+			for (int k = 0; k < ( samples / 10 ); ++k) { // ramp down
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
 
 				} else if (sqrflag) {
-					decrement = MAXSQR / ( ( numSamples / 10 ) - ( k + 1 ) );
+					decrement = MAXSQR / ( ( samples / 10 ) - ( k + 1 ) );
 					sqrCurVal = MAXSQR - decrement;
 					sqrflag = 0;
 				}
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 			
-			for (int l = 0; l < ( numSamples / 5 ); ++l) { // neg ramp down
+			for (int l = 0; l < ( samples / 10 ); ++l) { // neg ramp down
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -379,7 +380,7 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 
-			for (int m = 0; m < ( ( numSamples / 5 ) * 3 ); ++m) { // neg down
+			for (int m = 0; m < ( ( samples / 10 ) * 3 ); ++m) { // neg down
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -391,12 +392,12 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 			
-			for (int n = 0; n < ( numSamples / 5 ); ++n) { // ramp up
+			for (int n = 0; n < ( samples / 10 ); ++n) { // ramp up
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
 				} else if (sqrflag) {
-					decrement = MAXSQR / ( ( numSamples / 10 ) - ( n + 1 ) );
+					decrement = (-1 * MAXSQR ) / ( ( samples / 10 ) - ( n + 1 ) );
 					sqrCurVal = ( -1 * MAXSQR ) - decrement;
 					sqrflag = 0;
 				}
