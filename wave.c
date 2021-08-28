@@ -125,18 +125,18 @@ int main (int argc, char** argv) {
 	int count = 0;
 	char symbol = 0;
 
-	printf("------->	")
+	printf("------->	");
 
 	if (argc == 4) {  // 4 shapes: sine, triangle, sawtooth or softsquare
 			// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
 
-		if (!strcmp(argv[3], "sine")) {
+		if (!strcmp(argv[3], "sine") || (!strcmp(argv[3], "sin"))) {
 			symbol = 's';
-		} else if (!strcmp(argv[3], "triangle")) {
+		} else if (!strcmp(argv[3], "triangle") || (!strcmp(argv[3], "tri"))) {
 			symbol = '^';
 		} else if (!strcmp(argv[3], "saw") || (!strcmp(argv[3], "sawtooth"))) {
 			symbol = 'z';
-		} else if (!strcmp(argv[3], "square") || (!strcmp(argv[3], "softsquare"))){
+		} else if (!strcmp(argv[3], "square") || (!strcmp(argv[3], "softsquare")) || (!strcmp(argv[3], "sqr"))){
 			symbol = 'n';
 		} else {
 			exit(0);
