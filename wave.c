@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <time.h>
 
 /*
  * Set additional CLI arguments for shaping the wavetable being created.
@@ -19,7 +20,7 @@
 // =====================================================================
 //
 //						WaveTable Generator
-//							Linear Ramp:
+//				   Sine | Saw |	Triangle | Square
 //
 // =====================================================================
 
@@ -122,10 +123,12 @@ int main (int argc, char** argv) {
 	fwrite(wh, sizeof(struct WAVEHEADER), 1, wave);
 
 	int count = 0;
+	char symbol = 0;
+
+	printf("------->	")
 
 	if (argc == 4) {  // 4 shapes: sine, triangle, sawtooth or softsquare
 			// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
-		char symbol = 0;
 
 		if (!strcmp(argv[3], "sine")) {
 			symbol = 's';
@@ -141,33 +144,49 @@ int main (int argc, char** argv) {
 
 		shapeSwitch(symbol, numSamples, wave);
 			
-	} else {
-	
-		int flag = 0;
-
-		for ( int i = 0; i < ( numSamples * 2 ); ++i ) {
-				
-			if ( flag == 0 ) {
-
-				*sampleVal = 0;
-				flag = 1;
-
-				count++;
-			} else if ( flag == 1 ){ // Write bipolar saw from maximum positive range to maximum negative range.
-
-				*sampleVal = round( sixteenBit - ( ( sixteenBit * 2 ) / ( numSamples * 2) ) * i + 1 );
-				flag = 0;
-
-				count++;
-			}
-
-
-			printf("%i\n", *sampleVal);
-
-
-			fwrite(sampleVal, sizeof(SAMPLE), 1, wave);
+	} else { 
 		
+		srand(time(NULL));
+		rand();
+		int random = rand() % 4;
+
+		if ( random == 0 ) {
+			symbol = 's';
+		} else if ( random == 1 ) {
+			symbol = '^';
+		} else if ( random == 2 ) {
+			symbol = 'z';
+		} else {
+			symbol = 'n';
 		}
+
+		shapeSwitch(symbol, numSamples, wave);
+	
+	/* 	int flag = 0; */
+
+	/* 	for ( int i = 0; i < ( numSamples * 2 ); ++i ) { */
+				
+	/* 		if ( flag == 0 ) { */
+
+	/* 			*sampleVal = 0; */
+	/* 			flag = 1; */
+
+	/* 			count++; */
+	/* 		} else if ( flag == 1 ){ // Write bipolar saw from maximum positive range to maximum negative range. */
+
+	/* 			*sampleVal = round( sixteenBit - ( ( sixteenBit * 2 ) / ( numSamples * 2) ) * i + 1 ); */
+	/* 			flag = 0; */
+
+	/* 			count++; */
+	/* 		} */
+
+
+	/* 		printf("%i\n", *sampleVal); */
+
+
+	/* 		fwrite(sampleVal, sizeof(SAMPLE), 1, wave); */
+		
+	/* 	} */
 
 	}
 	
@@ -177,8 +196,8 @@ int main (int argc, char** argv) {
 
 	int headSize = sizeof(struct WAVEHEADER);
 
-	printf("Size of header: %i  \nSize of samples: %i  -- which size is: %i\n", headSize, count, count*16);
-	printf("Total size of file: %i\n", 8 + wh -> chunkSize);
+	//printf("Size of header: %i  \nSize of samples: %i  -- which size is: %i\n", headSize, count, count*16);
+	//printf("Total size of file: %i\n", 8 + wh -> chunkSize);
 
 	free(wh);
 
@@ -191,45 +210,43 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 
 	int count = 0;
 		
-	switch (symbol) { // Still not working tho:
-		case 's':					// SINE wavetable stolen from JUCE tutorial.
-
+	switch (symbol) { 
+		case 's':
 			printf("sine\n");
 
-			double currentAngle = 0.0f, angleDelta = 0.0f;
-			SAMPLE currentValue = 0;
+			double currentAngle = 0;
+			double angleDelta = 0;
+			float sinCurVal = 0;
+			float ssamples = ( numSamples * 2 );
+			angleDelta = ( M_PI * 2 ) / numSamples;
+			printf("%f", angleDelta);
+			float max =  MAX16 - 1 ;
+			int j = 0;
 
-			angleDelta = M_2_PI / ( numSamples - 1);
 
-			int sineflag = 0;
+			int sineflag = 1;
 
-			for (int i = 0; i < numSamples * 2; ++i) { // use sin() to get slices from a sine. sin( ( 360/numSamples ) * iteratorVariable ) * SAMPLE
-				// ONLY EXPORTS NOISE! NOT WORKING... 
+			for (int i = 0; i < ssamples; ++i) { 
 				
-				if (sineflag) {
+				if (!sineflag) {
 
-					currentValue = 0;
-					sineflag = 0;
+					sinCurVal = 0;
+					sineflag = 1;
+				} else if (sineflag){
 
-					count++;
-				} else {
-					currentValue = sin(currentAngle);
-					
-					currentAngle += angleDelta;
-					/* if (currentAngle >= M_2_PI){ */
-					/* 	 currentAngle -= M_2_PI; */
-					/* } */
-					sineflag = 1; 
+					// printf("Value from sin() : %f \n", sin( angleDelta * j ));
+					currentAngle = sin( angleDelta * j );
+					sinCurVal = max * currentAngle;
 
-					/* printf("%f\n", currentAngle); */
-					/* printf( "degPerSample * numSamples = %f", currentAngle ); */
+					// printf("2pi / nSamples:		%f\nsin(%f * %i):	%f \nresult * max:		%f\n", angleDelta, angleDelta, j, currentAngle, sinCurVal);
 
-					count++;
+					j++;
+
+					sineflag = 0; 
+
 				}
-
-				
-				fwrite(&currentValue, sizeof(SAMPLE), 1, file);
-				printf("%i", currentValue);
+				SAMPLE newsamp = (int) sinCurVal;
+				fwrite(&newsamp, sizeof(SAMPLE), 1, file);
 			}
 
 			break;
@@ -294,9 +311,10 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			int sawflag = 1;
 			
 			SAMPLE sawCurVal = 0;
+			float zsamples = numSamples * 2;
 			
 
-			for ( int i = 0; i < ( numSamples * 2 ); ++i ) {
+			for ( int i = 0; i < zsamples; ++i ) {
 					
 				if (!sawflag) {
 
@@ -307,27 +325,27 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 					count++;
 				} else if (sawflag){ // Write bipolar saw from maximum positive range to maximum negative range.
 
-			 		sawCurVal = round( MAX16 - ( ( MAX16 * 2 ) / ( numSamples * 2) ) * i + 1 );
+			 		sawCurVal = MAX16 - ( ( MAX16 * 2 ) / zsamples ) * i + 1;
 					sawflag = 0;
 
 					count++;
 				}
 
-				printf("%i\n", sawCurVal);
+				// printf("%i\n", sawCurVal);
 
 				fwrite(&sawCurVal, sizeof(SAMPLE), 1, file);
 			}
 			break;
 		case 'n':
-			printf("softsquare");
+			printf("softsquare\n");
 			
 			int sqrflag = 0;
 			SAMPLE sqrCurVal = 0;
 			const SAMPLE MAXSQR = MAX16 - 1;
 			float decrement = 0;
-			float samples = numSamples * 2;
+			float nsamples = numSamples * 2;
 
-			for (int i = 0; i < ( samples / 10 ); ++i) { // ramp up
+			for (int i = 0; i < ( nsamples / 10 ); ++i) { // ramp up
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -341,7 +359,7 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 
-			for (int j = 0; j < ( ( samples / 10 ) * 3 ); ++j) { // pos up
+			for (int j = 0; j < ( ( nsamples / 10 ) * 3 ); ++j) { // pos up
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -354,20 +372,20 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 
-			for (int k = 0; k < ( samples / 10 ); ++k) { // ramp down
+			for (int k = 0; k < ( nsamples / 10 ); ++k) { // ramp down
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
 
 				} else if (sqrflag) {
-					decrement = MAXSQR / ( ( samples / 10 ) - ( k + 1 ) );
+					decrement = MAXSQR / ( ( nsamples / 10 ) - ( k + 1 ) );
 					sqrCurVal = MAXSQR - decrement;
 					sqrflag = 0;
 				}
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 			
-			for (int l = 0; l < ( samples / 10 ); ++l) { // neg ramp down
+			for (int l = 0; l < ( nsamples / 10 ); ++l) { // neg-ramp down
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -380,7 +398,7 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 
-			for (int m = 0; m < ( ( samples / 10 ) * 3 ); ++m) { // neg down
+			for (int m = 0; m < ( ( nsamples / 10 ) * 3 ); ++m) { // neg-down
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
@@ -392,12 +410,12 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
 			}
 			
-			for (int n = 0; n < ( samples / 10 ); ++n) { // ramp up
+			for (int n = 0; n < ( nsamples / 10 ); ++n) { // neg-ramp up
 				if (!sqrflag){
 					sqrCurVal = 0;
 					sqrflag = 1;
 				} else if (sqrflag) {
-					decrement = (-1 * MAXSQR ) / ( ( samples / 10 ) - ( n + 1 ) );
+					decrement = (-1 * MAXSQR ) / ( ( nsamples / 10 ) - ( n + 1 ) );
 					sqrCurVal = ( -1 * MAXSQR ) - decrement;
 					sqrflag = 0;
 				}
