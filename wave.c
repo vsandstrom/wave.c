@@ -117,18 +117,17 @@ int main (int argc, char** argv) {
 	wh -> byteRate = SAMPLERATE * NUMCHAN * ( BITDEPTH / 8 ); // samplerate * numchannels * ( bits per sampler / 8 ) 
 	wh -> bps = BITDEPTH;
 	
-	int sixteenBit = MAX16;
 
 	// Write header to file
 	fwrite(wh, sizeof(struct WAVEHEADER), 1, wave);
 
-	int count = 0;
+	
 	char symbol = 0;
 
 	printf("------->	");
 
-	if (argc == 4) {  // 4 shapes: sine, triangle, sawtooth or softsquare
-			// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
+	if (argc == 4) {	// 4 shapes: sine, triangle, sawtooth or softsquare
+						// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
 
 		if (!strcmp(argv[3], "sine") || (!strcmp(argv[3], "sin"))) {
 			symbol = 's';
@@ -144,7 +143,8 @@ int main (int argc, char** argv) {
 
 		shapeSwitch(symbol, numSamples, wave);
 			
-	} else { 
+	} else {				// If no waveform is given at CLI
+							// you get a random one.
 		
 		srand(time(NULL));
 		rand();
@@ -161,32 +161,6 @@ int main (int argc, char** argv) {
 		}
 
 		shapeSwitch(symbol, numSamples, wave);
-	
-	/* 	int flag = 0; */
-
-	/* 	for ( int i = 0; i < ( numSamples * 2 ); ++i ) { */
-				
-	/* 		if ( flag == 0 ) { */
-
-	/* 			*sampleVal = 0; */
-	/* 			flag = 1; */
-
-	/* 			count++; */
-	/* 		} else if ( flag == 1 ){ // Write bipolar saw from maximum positive range to maximum negative range. */
-
-	/* 			*sampleVal = round( sixteenBit - ( ( sixteenBit * 2 ) / ( numSamples * 2) ) * i + 1 ); */
-	/* 			flag = 0; */
-
-	/* 			count++; */
-	/* 		} */
-
-
-	/* 		printf("%i\n", *sampleVal); */
-
-
-	/* 		fwrite(sampleVal, sizeof(SAMPLE), 1, wave); */
-		
-	/* 	} */
 
 	}
 	
@@ -194,16 +168,13 @@ int main (int argc, char** argv) {
 
 	free(sampleVal);
 
-	int headSize = sizeof(struct WAVEHEADER);
-
-	//printf("Size of header: %i  \nSize of samples: %i  -- which size is: %i\n", headSize, count, count*16);
-	//printf("Total size of file: %i\n", 8 + wh -> chunkSize);
-
 	free(wh);
 
 	return 0;
 
 }
+
+
 
 
 void shapeSwitch( char symbol, int numSamples, FILE* file) {
