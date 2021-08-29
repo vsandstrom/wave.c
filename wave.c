@@ -339,7 +339,7 @@ void shapeSwitch( char symbol, int numSamples, FILE* file) {
 		case 'n':
 			printf("softsquare\n");
 			
-			int sqrflag = 0;
+			int sqrflag = 1;
 			SAMPLE sqrCurVal = 0;
 			const SAMPLE MAXSQR = MAX16 - 1;
 			float decrement = 0;
