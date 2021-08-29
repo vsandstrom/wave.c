@@ -12,5 +12,9 @@ Waveforms that are available are the traditional:
 >    - (Noise, to be completed)<br/>
   
   if name of waveform is omitted, you will be given one at random.
+  
+  In wavetable.scd is template for playing waveforms.
+  The .wav-files must be placed in same folder as .scd-file for 
+  easy access.
 
  
