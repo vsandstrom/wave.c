@@ -6,14 +6,10 @@
 #include <time.h>
 
 /*
- * Set additional CLI arguments for shaping the wavetable being created.
- * Additional function of translating a .wav into SuperCollider WaveTable-format?
- *
- * TODO: Change algorithm to take in account that audio is a signed number, i.e. -1 .. 1..
- *
- * TODO: continue switch-statement for different shapes. implement algorithms 
  *
  * TODO: Set bitDepth, sampleRate and numSamples by reading header of input file.
+ * TODO: Additional function of translating a .wav into SuperCollider WaveTable-format?
+ * TODO: Be able to use both 16 and 24 bit depth.
  *
  */
 
@@ -24,12 +20,14 @@
 //
 // =====================================================================
 
+// Definde macros:
 #define MAX16 32767 
 #define MAX24 8388607
 #define SAMPLERATE 44100
 #define BITDEPTH 16
 #define NUMCHAN 1
 
+// Typedef and Struct:
 typedef int16_t SAMPLE; // 24 bit version might be made in the future
 typedef int32_t SAMPLE24; // Try using sizeof(char * 3) for reading writing
 
@@ -57,8 +55,12 @@ struct WAVEHEADER {
 
 } __attribute__((packed)) ;
 
+// Function prototype:
 void shapeSwitch( char symbol, int numSamples, FILE* file);
 
+////////////////////////////////////////////////////////////////////////////////
+///////////////////				Main Function			   /////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 int main (int argc, char** argv) {
 
@@ -174,8 +176,9 @@ int main (int argc, char** argv) {
 
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+///////////////////				Helper Functions		   /////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 void shapeSwitch( char symbol, int numSamples, FILE* file) {
 
