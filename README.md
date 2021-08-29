@@ -4,7 +4,7 @@ Important to only have numSamples as power-of-twos.
 <wave> <file-name> <numSamples> <waveform>
 
 At present only outputs a fixed waveform, with customizable name and numSamples.
-Waveforms that are available are the traditional:
+Available traditional waveforms are the following:
 >    - sawtooth || saw ||
 >    - square   || sqr || softsquare
 >    - Triangle || tri ||
@@ -13,8 +13,8 @@ Waveforms that are available are the traditional:
   
   if name of waveform is omitted, you will be given one at random.
   
-  In wavetable.scd is template for playing waveforms.
-  The .wav-files must be placed in same folder as .scd-file for 
+  In wavetable.scd is a template for playing the waveforms.
+  The .wav-files must be placed in the same folder as .scd-file for 
   easy access.
 
  
