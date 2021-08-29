@@ -2,7 +2,7 @@
 Generates .wav in SuperCollider wavetable format.<br/>
 Important to only have numSamples as power-of-twos.<br/>
 
-Usage: \<wave\> \<file-name\> \<numSamples\> \<waveform\>
+Usage: \<./wave\> \<file-name\> \<numSamples\> \<waveform\>
 
 At present only outputs a fixed waveform 16bit .wav, <br/>
 with customizable name and numSamples. <br/>
