@@ -1,11 +1,12 @@
 # wave.c
-Generates .wav in SuperCollider wavetable format.
-Important to only have numSamples as power-of-twos.
-<wave> <file-name> <numSamples> <waveform>
+Generates .wav in SuperCollider wavetable format.<br/>
+Important to only have numSamples as power-of-twos.<br/>
 
-At present only outputs a fixed waveform 16bit .wav, 
-with customizable name and numSamples.
-Available traditional waveforms are the following:
+Usage: \<wave\> \<file-name\> \<numSamples\> \<waveform\>
+
+At present only outputs a fixed waveform 16bit .wav, <br/>
+with customizable name and numSamples. <br/>
+Available traditional waveforms are the following:<br/>
 >    - sawtooth || saw ||
 >    - square   || sqr || softsquare
 >    - Triangle || tri ||
@@ -16,7 +17,7 @@ Available traditional waveforms are the following:
   
   In wavetable.scd is a template for playing the waveforms.
   The .wav-files must be placed in the same folder as .scd-file for 
-  easy access.
+  easy access.<br/>
 
- TODO: Implement opening and writing 24-bit .wav.
- TODO: opening other .wav-files and converting them. 
+ TODO: Implement opening and writing 24-bit .wav.<br/>
+ TODO: opening other .wav-files and converting them.<br/> 
