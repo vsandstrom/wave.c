@@ -1,20 +1,21 @@
 s.waitForBoot({
+	var path, filename, buffer;
 	Buffer.freeAll(s);
-	~path = File.getcwd;
+	path = File.getcwd;
 
 	//////////////////////////////////////////////////
 
-	~filename = "";  // <--- SET WAVETABLE NAME HERE. 
+	filename = "";  // <--- SET WAVETABLE NAME HERE. 
 					 //		 MUST BE IN SAME FOLDER AS
 					 //		 THIS SCRIPT.
 	
 	//////////////////////////////////////////////////
 
-	~buffer = Buffer.read(s, ~path +/+ ~filename);
+	buffer = Buffer.read(s, path +/+ filename);
 
 	s.sync;
 
-	{Osc.ar(~buffer,MouseX.kr(30,1000).round(50),0,0.1)!2}.play;
+	{Osc.ar(buffer,MouseX.kr(30,1000).round(50),0,0.1)!2}.play;
 
 
 	// Vector Synthesis: 
@@ -22,10 +23,10 @@ s.waitForBoot({
 	// 4 different wavetables.
 	// (Comment out line 13 -17 before running)
 
-	// ~buf0 = Buffer.read( s, ~path +/+ "" );
-	// ~buf1 = Buffer.read( s, ~path +/+ "" );
-	// ~buf2 = Buffer.read( s, ~path +/+ "" );
-	// ~buf3 = Buffer.read( s, ~path +/+ "" );
+	// Buffer.read( s, path +/+ "1tri.wav" );
+	// Buffer.read( s, path +/+ "1saw.wav" );
+	// Buffer.read( s, path +/+ "1sqr.wav" );
+	// Buffer.read( s, path +/+ "1sin.wav" );
 
 	// s.sync;
 	
