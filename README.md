@@ -21,3 +21,5 @@ Available traditional waveforms are the following:<br/>
 
  TODO: Implement opening and writing 24-bit .wav.<br/>
  TODO: opening other .wav-files and converting them.<br/> 
+ 
+ (For test with VOsc in wavetable.scd, each wavetable must have same sample size)
