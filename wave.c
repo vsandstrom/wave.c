@@ -31,32 +31,31 @@
 typedef int16_t SAMPLE; // 24 bit version might be made in the future
 typedef int32_t SAMPLE24; // Try using sizeof(char * 3) for reading writing
 
-
-typedef unsigned int int4_t; // redefine regular integer with bytesize in name
-typedef short int2_t; // same as above, but 2 byte
-
 struct WAVEHEADER {
 	
-	int4_t chunkID;
-	int4_t chunkSize;
-	int4_t format;
+	int chunkID;
+	int chunkSize;
+	int format;
 
-	int4_t subChunk1ID;
-	int4_t subChunk1Size;
-	int2_t audioFormat;
-	int2_t numChan;
-	int4_t smplRate;
-	int4_t byteRate;
-	int2_t blockAlign;
-	int2_t bps; // bits per sample
+	int subChunk1ID;
+	int subChunk1Size;
+	short audioFormat;
+	short numChan;
+	int smplRate;
+	int byteRate;
+	short blockAlign;
+	short bps; // bits per sample
 
-	int4_t subChunk2ID;
-	int4_t subChunk2Size;
+	int subChunk2ID;
+	int subChunk2Size;
 
 } __attribute__((packed)) ;
 
 // Function prototype:
-void shapeSwitch( char symbol, int numSamples, FILE* file);
+void createSin( int numSamples, FILE* file );
+void createSqr( int numSamples, FILE* file );
+void createTri( int numSamples, FILE* file );
+void createSaw( int numSamples, FILE* file );
 
 ////////////////////////////////////////////////////////////////////////////////
 ///////////////////				Main Function			   /////////////////////
@@ -80,12 +79,6 @@ int main (int argc, char** argv) {
 	
 	struct WAVEHEADER* wh = malloc(sizeof(struct WAVEHEADER));
 	
-	SAMPLE* sampleVal = malloc(sizeof(SAMPLE));
-	if (sampleVal == NULL) {
-		printf("memalloc failed");
-		return 3;
-	}
-	
 	int numSamples = atoi(argv[2]);
 	
 	char path[40];
@@ -102,7 +95,7 @@ int main (int argc, char** argv) {
 	
 	// wh -> subChunk2ID = 0x64617461; endianess from documentation
 	wh -> subChunk2ID = 0x61746164; // reverse endian
-	wh -> subChunk2Size = ( numSamples * 2)  * NUMCHAN * ( BITDEPTH / 8 );
+	wh -> subChunk2Size = ( numSamples )  * NUMCHAN * ( BITDEPTH / 8 );
 	
 	// wh -> chunkID = 0x52494646;
 	wh -> chunkID = 0x46464952;
@@ -123,8 +116,6 @@ int main (int argc, char** argv) {
 	// Write header to file
 	fwrite(wh, sizeof(struct WAVEHEADER), 1, wave);
 
-	
-	char symbol = 0;
 
 	printf("------->	");
 
@@ -132,18 +123,16 @@ int main (int argc, char** argv) {
 						// 's' = sine, '^' = triangle, 'z' = sawtooth, 'n' = softsquare.
 
 		if (!strcmp(argv[3], "sine") || (!strcmp(argv[3], "sin"))) {
-			symbol = 's';
+			createSin( numSamples, wave );
 		} else if (!strcmp(argv[3], "triangle") || (!strcmp(argv[3], "tri"))) {
-			symbol = '^';
+			createTri( numSamples, wave );
 		} else if (!strcmp(argv[3], "saw") || (!strcmp(argv[3], "sawtooth"))) {
-			symbol = 'z';
+			createSaw( numSamples, wave );
 		} else if (!strcmp(argv[3], "square") || (!strcmp(argv[3], "softsquare")) || (!strcmp(argv[3], "sqr"))){
-			symbol = 'n';
+			createSqr( numSamples, wave );
 		} else {
 			exit(0);
 		}
-
-		shapeSwitch(symbol, numSamples, wave);
 			
 	} else {				// If no waveform is given at CLI
 							// you get a random one.
@@ -153,22 +142,18 @@ int main (int argc, char** argv) {
 		int random = rand() % 4;
 
 		if ( random == 0 ) {
-			symbol = 's';
+			createSin(numSamples, wave);
 		} else if ( random == 1 ) {
-			symbol = '^';
+			createSqr(numSamples, wave);
 		} else if ( random == 2 ) {
-			symbol = 'z';
+			createTri(numSamples, wave);
 		} else {
-			symbol = 'n';
+			createSaw(numSamples, wave);
 		}
-
-		shapeSwitch(symbol, numSamples, wave);
 
 	}
 	
 	fclose(wave);
-
-	free(sampleVal);
 
 	free(wh);
 
@@ -180,227 +165,203 @@ int main (int argc, char** argv) {
 ///////////////////				Helper Functions		   /////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void shapeSwitch( char symbol, int numSamples, FILE* file) {
 
-	int count = 0;
+void createSin( int numSamples, FILE* file ) {
+	printf("sine\n");
+	int flag = 1;
+
+	double currentAngle = 0;
+	double angleDelta = 0;
+	float curVal = 0;
+	angleDelta = ( M_PI * 2 ) / ( numSamples * 0.5 );
+	printf("%f", angleDelta);
+	float max =  MAX16 - 1 ;
+	int j = 0;
+
+	for (int i = 0; i < numSamples; ++i) { 
+		if (!flag) {
+			curVal = 0;
+			flag = 1;
+
+		} else if (flag){
+			currentAngle = sin( angleDelta * j );
+			curVal = max * currentAngle;
+			j++;
+			flag = 0; 
+
+		}
+		SAMPLE newsamp = (int) curVal;
+		fwrite(&newsamp, sizeof(SAMPLE), 1, file);
+
+	}
+}
+
+
+void createSaw(int numSamples, FILE* file) {
+	printf("sawtooth\n");
+	int flag = 1;
+	SAMPLE curVal = 0;
+
+	for ( int i = 0; i < numSamples; ++i ) {
+		if (!flag) {
+			curVal = 0;
+			flag = 1;
+
+		} else if (flag){ // Write bipolar saw from maximum positive range to maximum negative range.
+			curVal = MAX16 - ( ( MAX16 * 2 ) / numSamples ) * i + 1;
+			flag = 0;
+
+		}
+		fwrite(&curVal, sizeof(SAMPLE), 1, file);
+
+	}
+
+}
+
+void createTri( int numSamples, FILE* file ) {
+
+	printf("triangle\n");
+
+	int flag = 1;
+	SAMPLE curVal = 0;
+	float increment = ( MAX16 - 1 ) / ( numSamples * 0.5 ); // Calculate increment per sample in tri
+	float tempCur = 0;
+
+	// 4 segments: up | down | neg-down | neg-up
+
+	for (int i = 0; i < ( numSamples * 0.25 ); ++i) { // up
+		if (!flag) {
+			curVal = 0;
+			flag = 1;
+
+		} else if (flag) {
+			tempCur += increment;
+			curVal = tempCur;
+			flag = 0;
+		}
+		fwrite(&curVal, sizeof(SAMPLE), 1, file);
+
+	}
+	for (int j = 0; j < ( numSamples * 0.5 ); ++j) { // neg-down
+		if (!flag) {
+			curVal = 0;
+			flag = 1;
+
+		} else if (flag) {
+			tempCur -= increment;
+			curVal = tempCur;
+			flag = 0;
+		}
+		fwrite(&curVal, sizeof(SAMPLE), 1, file);
+
+	}
+	for (int k = 0; k < ( numSamples * 0.25 ); ++k) { // neg-up
+		if (!flag) {
+			curVal = 0;
+			flag = 1;
+
+		} else if (flag) {
+			tempCur += increment;
+			curVal = tempCur;
+			flag = 0;
+		}
+		fwrite(&curVal, sizeof(SAMPLE), 1, file);
 		
-	switch (symbol) { 
-		case 's':
-			printf("sine\n");
-
-			double currentAngle = 0;
-			double angleDelta = 0;
-			float sinCurVal = 0;
-			float ssamples = ( numSamples * 2 );
-			angleDelta = ( M_PI * 2 ) / numSamples;
-			printf("%f", angleDelta);
-			float max =  MAX16 - 1 ;
-			int j = 0;
+	}
+}
 
 
-			int sineflag = 1;
+void createSqr( int numSamples, FILE* file ) {
 
-			for (int i = 0; i < ssamples; ++i) { 
-				
-				if (!sineflag) {
+	printf("softsquare\n");
+	
+	int flag = 1;
+	float curVal = 0;
+	const float MAXSQR = MAX16 - 1;
+	int newsamp = 0;
 
-					sinCurVal = 0;
-					sineflag = 1;
-				} else if (sineflag){
+	float decrement = 0;
 
-					// printf("Value from sin() : %f \n", sin( angleDelta * j ));
-					currentAngle = sin( angleDelta * j );
-					sinCurVal = max * currentAngle;
+	for (int i = 0; i < ( numSamples * 0.1 ); ++i) { // ramp up
+		if (!flag){
+			curVal = 0;
+			flag = 1;
 
-					// printf("2pi / nSamples:		%f\nsin(%f * %i):	%f \nresult * max:		%f\n", angleDelta, angleDelta, j, currentAngle, sinCurVal);
+		} else if (flag) {
+			decrement = MAXSQR / ( i + 1 );
+			curVal = MAXSQR - decrement;
+			flag = 0;
 
-					j++;
+		}
+	newsamp = (int) curVal;
+	fwrite(&newsamp, sizeof(SAMPLE), 1, file);
+	}
 
-					sineflag = 0; 
+	for (int j = 0; j < ( ( numSamples * 0.1 ) * 3 ); ++j) { // pos up
+		if (!flag){
+			curVal = 0;
+			flag = 1;
 
-				}
-				SAMPLE newsamp = (int) sinCurVal;
-				fwrite(&newsamp, sizeof(SAMPLE), 1, file);
-			}
+		} else if (flag) {
+			curVal = MAXSQR;
+			flag = 0;
 
-			break;
-		case '^':
-			printf("triangle\n");
+		}
+	newsamp = (int) curVal;
+	fwrite(&newsamp, sizeof(SAMPLE), 1, file);
+	}
 
-			int triflag = 1;
-			SAMPLE triCurVal = 0;
-			float increment = ( MAX16 - 1 ) / ( numSamples / 4 ); // Calculate increment per sample in tri
-			float tempCur = 0;
+	for (int k = 0; k < ( numSamples * 0.1 ); ++k) { // ramp down
+		if (!flag){
+			curVal = 0;
+			flag = 1;
 
-			// 4 segments: up | down | neg-down | neg-up
+		} else if (flag) {
+			decrement = MAXSQR / ( ( numSamples * 0.1 ) - ( k + 1 ) );
+			curVal = MAXSQR - decrement;
+			flag = 0;
+		}
+	newsamp = (int) curVal;
+	fwrite(&newsamp, sizeof(SAMPLE), 1, file);
+	}
+	
+	for (int l = 0; l < ( numSamples * 0.1 ); ++l) { // neg-ramp down
+		if (!flag){
+			curVal = 0;
+			flag = 1;
 
-			for (int i = 0; i < ( numSamples / 2 ); ++i) { // up
+		} else if (flag) {
+			decrement = MAXSQR / ( l + 1 );
+			curVal =  -1 * ( MAXSQR - decrement );
+			flag = 0;
+		}
+	newsamp = (int) curVal;
+	fwrite(&newsamp, sizeof(SAMPLE), 1, file);
+	}
 
-				if (!triflag) {
-					triCurVal = 0;
-					triflag = 1;
+	for (int m = 0; m < ( ( numSamples * 0.1 ) * 3 ); ++m) { // neg-down
+		if (!flag){
+			curVal = 0;
+			flag = 1;
 
-				} else if (triflag) {
-					tempCur += increment;
-					triCurVal = tempCur;
-					triflag = 0;
-				}
-
-				fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
-			}
-			
-			for (int j = 0; j < ( numSamples ); ++j) { // neg-down
-
-				if (!triflag) {
-					triCurVal = 0;
-					triflag = 1;
-
-				} else if (triflag) {
-					tempCur -= increment;
-					triCurVal = tempCur;
-					triflag = 0;
-				}
-				fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
-			}
-
-			for (int k = 0; k < ( numSamples / 2 ); ++k) { // neg-up
-
-				if (!triflag) {
-					triCurVal = 0;
-					triflag = 1;
-
-				} else if (triflag) {
-					tempCur += increment;
-					triCurVal = tempCur;
-					triflag = 0;
-				}
-
-				fwrite(&triCurVal, sizeof(SAMPLE), 1, file);
-				
-			}
-
-			break;
-		case 'z':
-			printf("sawtooth\n");
-			int sawflag = 1;
-			
-			SAMPLE sawCurVal = 0;
-			float zsamples = numSamples * 2;
-			
-
-			for ( int i = 0; i < zsamples; ++i ) {
-					
-				if (!sawflag) {
-
-					sawCurVal = 0;
-
-					sawflag = 1;
-
-					count++;
-				} else if (sawflag){ // Write bipolar saw from maximum positive range to maximum negative range.
-
-			 		sawCurVal = MAX16 - ( ( MAX16 * 2 ) / zsamples ) * i + 1;
-					sawflag = 0;
-
-					count++;
-				}
-
-				// printf("%i\n", sawCurVal);
-
-				fwrite(&sawCurVal, sizeof(SAMPLE), 1, file);
-			}
-			break;
-		case 'n':
-			printf("softsquare\n");
-			
-			int sqrflag = 1;
-			SAMPLE sqrCurVal = 0;
-			const SAMPLE MAXSQR = MAX16 - 1;
-			float decrement = 0;
-			float nsamples = numSamples * 2;
-
-			for (int i = 0; i < ( nsamples / 10 ); ++i) { // ramp up
-				if (!sqrflag){
-					sqrCurVal = 0;
-					sqrflag = 1;
-
-				} else if (sqrflag) {
-					decrement = MAXSQR / ( i + 1 );
-					sqrCurVal = MAXSQR - decrement;
-					sqrflag = 0;
-
-				}
-			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
-			}
-
-			for (int j = 0; j < ( ( nsamples / 10 ) * 3 ); ++j) { // pos up
-				if (!sqrflag){
-					sqrCurVal = 0;
-					sqrflag = 1;
-
-				} else if (sqrflag) {
-					sqrCurVal = MAXSQR;
-					sqrflag = 0;
-
-				}
-			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
-			}
-
-			for (int k = 0; k < ( nsamples / 10 ); ++k) { // ramp down
-				if (!sqrflag){
-					sqrCurVal = 0;
-					sqrflag = 1;
-
-				} else if (sqrflag) {
-					decrement = MAXSQR / ( ( nsamples / 10 ) - ( k + 1 ) );
-					sqrCurVal = MAXSQR - decrement;
-					sqrflag = 0;
-				}
-			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
-			}
-			
-			for (int l = 0; l < ( nsamples / 10 ); ++l) { // neg-ramp down
-				if (!sqrflag){
-					sqrCurVal = 0;
-					sqrflag = 1;
-
-				} else if (sqrflag) {
-					decrement = MAXSQR / ( l + 1 );
-					sqrCurVal =  -1 * ( MAXSQR - decrement );
-					sqrflag = 0;
-				}
-			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
-			}
-
-			for (int m = 0; m < ( ( nsamples / 10 ) * 3 ); ++m) { // neg-down
-				if (!sqrflag){
-					sqrCurVal = 0;
-					sqrflag = 1;
-
-				} else if (sqrflag) {
-					sqrCurVal = ( -1 * MAXSQR );
-					sqrflag = 0;
-				}
-			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
-			}
-			
-			for (int n = 0; n < ( nsamples / 10 ); ++n) { // neg-ramp up
-				if (!sqrflag){
-					sqrCurVal = 0;
-					sqrflag = 1;
-				} else if (sqrflag) {
-					decrement = (-1 * MAXSQR ) / ( ( nsamples / 10 ) - ( n + 1 ) );
-					sqrCurVal = ( -1 * MAXSQR ) - decrement;
-					sqrflag = 0;
-				}
-			fwrite(&sqrCurVal, sizeof(SAMPLE), 1, file);
-			}
-
-			break;
-		default:
-			printf("something went wrong...");
-			break;
-
-
+		} else if (flag) {
+			curVal = ( -1 * MAXSQR );
+			flag = 0;
+		}
+	newsamp = (int) curVal;
+	fwrite(&newsamp, sizeof(SAMPLE), 1, file);
+	}
+	
+	for (int n = 0; n < ( numSamples * 0.1 ); ++n) { // neg-ramp up
+		if (!flag){
+			curVal = 0;
+			flag = 1;
+		} else if (flag) {
+			decrement = (-1 * MAXSQR ) / ( ( numSamples * 0.1 ) - ( n + 1 ) );
+			curVal = ( -1 * MAXSQR ) - decrement;
+			flag = 0;
+		}
+	newsamp = (int) curVal;
+	fwrite(&newsamp, sizeof(SAMPLE), 1, file);
 	}
 }
