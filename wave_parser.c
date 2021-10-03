@@ -51,7 +51,6 @@ int main(int argc, char** argv) {
 	struct B_EXTENSION bextHeader;
 	struct DATA dataHeader;
 	int cursor;
-	printf("here");
 
 	if (argc != 2) {
 		printf("wrong number of arguments\n");
@@ -60,10 +59,11 @@ int main(int argc, char** argv) {
 	
 
 	char path[40];
-	sprintf(path, "./%s.wav", argv[1]); // file opened must be in same directory as c program
-	printf("%s\n", path);
+	sprintf(path, "./%s", argv[1]); // file opened must be in same directory as c program
+	printf("\n%s\n", path);
 	
 	FILE* wave = fopen(path, "r");
+
 	if(wave == NULL) {
 		printf("unable to open file\n");
 		return 3;
@@ -72,127 +72,72 @@ int main(int argc, char** argv) {
 	};
 	// fread(&mainHeader, sizeof(struct WAVEHEADER), 1, wave);
 	fread(&cursor, 4, 1, wave);
-	if (cursor == 0x46464952) {
-		printf("true\n");
+	if (cursor == 0x46464952) { // Check if file is RIFF
+
 		mainHeader.riffID = cursor;
 		fread(&mainHeader.headerSize, 4, 1, wave);
 		fread(&mainHeader.filetypeID, 4, 1, wave);
-		printf(
-				"RIFF ID:\n%x\n"
-				"Size of file after this and previous block ( 8 bytes ):\n%i\n"
-				"Filetype ( WAVE ):\n%x\n", mainHeader.riffID, mainHeader.headerSize, mainHeader.filetypeID);
 
 	} else {
-		printf("false\n");
+		printf("File format not recognized\n");
 	}
+
 	int flag = 0;
 	char *bextChunk = 0; // ptr to store bext chunk
-	while( !flag ) {
+
+	while( flag != 1 ) {
 		// loop until 'data' chunk is found
+		
 		fread(&cursor, 4, 1, wave);
-			//printf("in loop");
-			//printf("%x", cursor);
 
 		if ( cursor == 0x20746d66 ) {
 			// if fmt
-			printf("fmt\n\n");
+			
 			fmtHeader.formatID = cursor;
 			fread(&fmtHeader.formatSize, 4, 1, wave);
-			printf("Chunk size: %i\n",fmtHeader.formatSize);
 			fread(&fmtHeader.audioFormat, 2, 1, wave);
-			printf("Audio format: %i\n", fmtHeader.audioFormat);
 			fread(&fmtHeader.numChan, 2, 1, wave);
-			printf("Number of channels: %i\n", fmtHeader.numChan);
 			fread(&fmtHeader.smplRate, 4, 1, wave);
-			printf("Samplerate: %i\n", fmtHeader.smplRate);
 			fread(&fmtHeader.byteRate, 4, 1, wave);
-			printf("Byterate: %i\n", fmtHeader.byteRate);
 			fread(&fmtHeader.blockAlign, 2, 1, wave);
-			printf("Block align: %i\n", fmtHeader.blockAlign);
 			fread(&fmtHeader.bps, 2, 1, wave);
-			printf("Bits per sample: %i\n", fmtHeader.bps);
 
-		} else if ( cursor == 0x74786562 ) { // have to test if it copies properly, otherwise scrub
+		} else if ( cursor == 0x74786562 ) { 
 			// if bext
+			
 			printf("\nbext\n\n");
 			bextHeader.bextID = cursor;
 			fread(&bextHeader.bextSize, 4, 1, wave);
 			bextChunk = malloc(sizeof(char) * bextHeader.bextSize);
-			printf("%i\n", bextHeader.bextSize);
-			printf("modulo: %i\n", bextHeader.bextSize % 4);
 			fread(bextChunk, bextHeader.bextSize, 1, wave);
+
 			for(int i = 0, n = bextHeader.bextSize; i < n; ++i) {
 				if (bextChunk[i] == 0x00) {
 					printf(" ");
 				} else {
 					printf("%c", bextChunk[i]);
 				}
-				//printf("%i\n", i);
-				//printf("%c", bextChunk[i]);
-			}
-			printf("%i", bextChunk[67]);
-			if (bextHeader.bextSize % 4 != 0){
-				fseek(wave, bextHeader.bextSize % 4, SEEK_CUR);
 			}
 			printf("\n");
-			
 
 		} else if ( cursor == 0x61746164 ) {
 			// if data
-			printf("\ndata\n\n");
+			
 			fread(&dataHeader.dataSize, 4, 1, wave);
 			printf("%i\n", dataHeader.dataSize);
 
-
 			flag = 1;
+
+		} else {
+			// if some junk chunk is trailing bext chunk
+			
+			fread(&cursor, 4, 1, wave); // read size of junk chunk
+			fseek(wave, cursor, SEEK_CUR); // skip junk chunk
 		}
 	} 
 
 
-	fclose(wave);
-
-	/*
-		fread(&mainHeader, sizeof(struct WAVEHEADER), 1, wave);
-
-	int headID;
-
-	while(fread(&headID, 4, 1, wave) != 0x61746164) {
-
-		if (headID == 0x20746d66) { // check for filetypeID chunk
-			fmtHeader.formatID = headID;
-			fread(&fmtHeader.formatSize, 4, 1, wave);
-
-			if (fmtHeader.formatSize != 16) {
-				// handle edge case if filetypeID chunk is longer than expected
-				printf("filetypeID not understood");
-				return 3;
-
-			} else {
-				fread(&fmtHeader.audioFormat, sizeof(short), 1, wave);
-				fread(&fmtHeader.numChan, sizeof(short), 1, wave);
-				if (fmtHeader.audioFormat != 1) {
-					// handle edge case if audioFormat not PCM
-					return 3;
-
-				} 
-				fread(&fmtHeader.smplRate, sizeof(int16_t), 1, wave);
-				fread(&fmtHeader.byteRate, sizeof(int16_t), 1, wave);
-				fread(&fmtHeader.blockAlign, sizeof(short), 1, wave);
-				fread(&fmtHeader.bps, sizeof(short), 1, wave);
-
-			}
-
-		} else if (headID == 0x74786562) { // check for bext chunk
-			bextHeader.bextID = headID;
-			fread(&bextHeader.bextSize, sizeof(int16_t), 1, wave);
-
-			int* bextChunk = malloc(sizeof(bextHeader.bextSize / 8));
-			fread(bextChunk, sizeof( bextHeader.bextSize / 8 ), 1, wave);
-
-		}
-
-	} 
-	dataHeader.dataID = headID; // read data chunk
+	/* dataHeader.dataID = headID; // read data chunk
 	fread(&dataHeader.dataSize, sizeof(int16_t), 1, wave);
 	int32_t* data = malloc(dataHeader.dataSize / 8);
 	fread(data, sizeof(data), 1, wave);
@@ -209,6 +154,10 @@ int main(int argc, char** argv) {
 
 	fclose(wave);
 	*/
+
+	free(bextChunk);
+	fclose(wave);
+
 	return 0;
 
 
