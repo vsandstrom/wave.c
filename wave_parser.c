@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
 		printf("false\n");
 	}
 	int flag = 0;
-	int *bextChunk = 0; // ptr to store bext chunk
+	char *bextChunk = 0; // ptr to store bext chunk
 	while( !flag ) {
 		// loop until 'data' chunk is found
 		fread(&cursor, 4, 1, wave);
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
 					printf("%c", bextChunk[i]);
 				}
 				//printf("%i\n", i);
-				printf("%c", bextChunk[i]);
+				//printf("%c", bextChunk[i]);
 			}
 			printf("%i", bextChunk[67]);
 			if (bextHeader.bextSize % 4 != 0){
