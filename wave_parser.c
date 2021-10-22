@@ -13,7 +13,7 @@ struct WAVEHEADER {
 	int riffID; //  0x46464952 'FFIR' ('RIFF')
 	int headerSize;
 	int filetypeID; // 0x45564157 'EVAW' ('WAVE')
-} __attribute__((packed)) ;
+};
 
 struct B_EXTENSION {
 	int bextID; // 0x74786562 'txeb' ('bext')
@@ -34,15 +34,8 @@ struct FORMAT {
 struct DATA {
 	int dataID; // 0x61746164 = 'atad' ('data')
 	int dataSize;
+	int32_t* dataChunk;
 }; 
-
-typedef int32_t SAMPLE16;
-
-union SAMPLE24 {
-	char byte[3];
-	int32_t sample;
-};
-
 
 
 int main(int argc, char** argv) {
@@ -137,6 +130,15 @@ int main(int argc, char** argv) {
 	} 
 
 
+	if (fmtHeader.bps == 16) {
+		dataHeader.dataChunk = malloc(sizeof(int32_t) * (dataHeader.dataSize / 16));
+	} else if (fmtHeader.bps == 24) {
+		dataHeader.dataChunk = malloc(sizeof(int32_t) * (dataHeader.dataSize / 24));
+	}
+
+	
+
+
 	/* dataHeader.dataID = headID; // read data chunk
 	fread(&dataHeader.dataSize, sizeof(int16_t), 1, wave);
 	int32_t* data = malloc(dataHeader.dataSize / 8);
@@ -158,7 +160,6 @@ int main(int argc, char** argv) {
 	free(bextChunk);
 	fclose(wave);
 
-	return 0;
 
 
 	// Do sample manipulation
@@ -173,19 +174,40 @@ int main(int argc, char** argv) {
 	/* } */
 
 	// Write header and new data	
-	
-	/* char newPath[40]; */
-	/* sprintf(newPath, "%s_wavetable.wav", path); */
-	/* FILE* dest = fopen(newPath, "w"); */
-	/* fwrite(&mainHeader, sizeof(mainHeader), 1, dest); */
-	/* fwrite(&fmtHeader, sizeof(fmtHeader), 1, dest); */
+	int len = strlen(path);
+	char revPath[len];
+	for (int i = 0, l = len; i < l; ++i) {
+		revPath[i] = path[i];
+	}
+	char newPath[len + 15];
+	sprintf(newPath, "%s_wavetable.wav", path);
+
+	FILE* dest = fopen(newPath, "w");
+
+	fwrite(&mainHeader, sizeof(mainHeader), 1, dest);
+	fwrite(&fmtHeader, sizeof(fmtHeader), 1, dest);
+
 	/* if (bextHeader.bextID != 0) { */
 	/* 	fwrite(&bextHeader, sizeof(bextHeader), 1, dest); */
+	/* 	for( int i = 0, n = bextHeader.bextSize; i < n; ++i ) { */
+			
+	/* 		fwrite(bextChunk[i], 1, 1, dest); // skriv bext över till */ 
+			
+	/* 	} */
+	/* 	fwrite(bextChunk, sizeof(*bextChunk), 1, dest); */
 	/* } */
-	/* fwrite(&dataHeader, sizeof(dataHeader), 1, dest); */
+
+	/* fwrite(&dataHeader.dataID, sizeof(dataHeader.dataID), 1, dest); */
+	/* fwrite(&dataHeader.dataSize, sizeof(dataHeader.dataSize), 1, dest); */
+	/* fwrite(dataHeader.dataChunk, sizeof(dataHeader.dataChunk), 1, dest); */
+
+	/* free(dataHeader.dataChunk); */
+	/* fclose(dest); */
+	
 
 	// free mallocs and close files.
 	
 	
+	return 0;
 
 };
