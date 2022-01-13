@@ -59,7 +59,6 @@ void createSqr( int numSamples, FILE* file, int32_t sampleMax );
 void createTri( int numSamples, FILE* file, int32_t sampleMax );
 void createSaw( int numSamples, FILE* file, int32_t sampleMax );
 
-
 int main (int argc, char** argv) {
 
 	// ./wave output.wav -o
@@ -205,10 +204,6 @@ int main (int argc, char** argv) {
 		printf("SubChunkID 2: %x\n", header -> subChunk2ID);
 		printf("SubChunkSize 2 %i\n", header -> subChunk2Size);
 
-
-		
-
-
 		int numBytes = BITDEPTH / 8;
 
 		SAMPLE sample = 0;
@@ -258,7 +253,7 @@ void createSin( int numSamples, FILE* file, int32_t MAXDEPTH ) {
 
 		}
 		SAMPLE sample = (int) curVal;
-		fwrite(&sample, 1, 3, file);
+		fwrite(&sample, 1, 3, file); // 
 		
 		//fwrite(&newsamp, sizeof(SAMPLE), 1, file);
 	}
