@@ -3,7 +3,9 @@
 Generates a wave-file in SuperCollider wavetable format.<br/>
 Important to only have a value of the number of samples as a power-of-two.<br/>
 
-ARGV Usage: \<./wave\> \< output name (excluding '.wav') \> \< number of samples \> \< type of waveform \>
+````bash
+./wave <output name (excluding '.wav')> <number of samples> <type of waveform>
+``````
 
 At present this program outputs a wave-file with a fixed waveform at 24bit, <br/>
 and a setable length in samples, with a customizable name. <br/>
